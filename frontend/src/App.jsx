@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { Leaf, Map as MapIcon, BarChart2, ScanLine, Sun, Moon, Cloud } from 'lucide-react';
 import Scanner from './components/Scanner';
 import MapView from './components/Map';
