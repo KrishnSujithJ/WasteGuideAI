@@ -40,7 +40,7 @@ const Scanner = () => {
     setResult(null);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/scan', { item: searchQuery });
+      const response = await axios.post('https://wasteguideai-backend.onrender.com/api/scan', { item: searchQuery });
       setResult(response.data);
     } catch (err) {
       console.error(err);

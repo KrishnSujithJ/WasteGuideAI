@@ -33,7 +33,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/history');
+        const response = await axios.get('https://wasteguideai-backend.onrender.com/api/history');
         setHistory(response.data);
       } catch (error) {
         console.error("Failed to fetch history", error);

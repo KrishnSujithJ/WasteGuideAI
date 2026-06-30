@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { Leaf, Map as MapIcon, BarChart2, ScanLine, Sun, Moon, Cloud } from 'lucide-react';
 import Scanner from './components/Scanner';
 import MapView from './components/Map';
@@ -19,6 +19,7 @@ function App() {
   }, []);
 
   useEffect(() => {
+    document.documentElement.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
     if (isDarkMode) {
       document.body.setAttribute('data-theme', 'dark');
     } else {
@@ -29,16 +30,16 @@ function App() {
   useEffect(() => {
     const facts = [
       "Recycling a single aluminum can saves enough energy to power a TV for 3 hours.",
-      "A glass bottle takes 4,000 years to decompose in a landfill.",
+      "Glass can be recycled endlessly without loss in quality or purity.",
+      "Over 1 million seabirds and 100,000 sea mammals are killed by pollution every year.",
       "Recycling one ton of paper saves 17 trees and 7,000 gallons of water.",
-      "E-waste represents 2% of America's trash in landfills, but it equals 70% of overall toxic waste.",
-      "Only 9% of all plastic waste ever produced has been recycled."
+      "E-waste represents 2% of America's trash in landfills, but it equals 70% of overall toxic waste."
     ];
     setFact(facts[Math.floor(Math.random() * facts.length)]);
 
     const fetchStats = async () => {
       try {
-        const res = await axios.get('http://localhost:5000/api/history');
+        const res = await axios.get('https://wasteguideai-backend.onrender.com/api/history');
         const history = res.data;
         const total = history.length;
         
