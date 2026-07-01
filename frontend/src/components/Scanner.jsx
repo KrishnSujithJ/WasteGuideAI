@@ -8,6 +8,8 @@ const Scanner = () => {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [centers, setCenters] = useState([]);
+  const [centersLoading, setCentersLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,6 +26,62 @@ const Scanner = () => {
 
     return () => document.body.removeAttribute('data-category');
   }, [result]);
+
+  // Haversine formula to calculate distance in km
+  const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; 
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return (R * c).toFixed(1);
+  };
+
+  const fetchNearbyCenters = (category) => {
+    if (!navigator.geolocation) return;
+    setCentersLoading(true);
+    setCenters([]);
+    
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        const radius = 5000;
+        const query = `
+          [out:json];
+          (
+            node["amenity"="recycling"](around:${radius},${latitude},${longitude});
+          );
+          out body;
+        `;
+        const res = await axios.get(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        
+        if (res.data && res.data.elements) {
+          const fetchedCenters = res.data.elements.map(el => {
+            const tags = el.tags || {};
+            const types = Object.keys(tags)
+              .filter(k => k.startsWith('recycling:') && tags[k] === 'yes')
+              .map(k => k.replace('recycling:', '').charAt(0).toUpperCase() + k.replace('recycling:', '').slice(1));
+            
+            return {
+              id: el.id,
+              name: tags.name || tags.operator || 'Local Recycling Center',
+              distance: getDistance(latitude, longitude, el.lat, el.lon),
+              types: types.length > 0 ? types.join(', ') : 'General Recycling'
+            };
+          }).sort((a, b) => a.distance - b.distance).slice(0, 3);
+          setCenters(fetchedCenters);
+        }
+      } catch (err) {
+        console.error("Failed to fetch centers:", err);
+      } finally {
+        setCentersLoading(false);
+      }
+    }, () => {
+      setCentersLoading(false);
+    });
+  };
 
   const handleScan = async (e, directQuery = null) => {
     if (e) e.preventDefault();
@@ -46,6 +104,7 @@ const Scanner = () => {
         setResult(null);
       } else {
         setResult(response.data);
+        fetchNearbyCenters(response.data.category);
       }
     } catch (err) {
       console.error(err);
@@ -180,6 +239,38 @@ const Scanner = () => {
                 <div className="difficulty-badge">
                   {result.recycling_difficulty}
                 </div>
+              </div>
+            )}
+          </div>
+
+          <div className="centers-section">
+            <h3 className="centers-title"><MapPin size={20} /> Nearby Collection Centers</h3>
+            {centersLoading ? (
+              <div className="centers-loading">
+                <Loader2 className="spinner" size={24} />
+                <p>Finding centers near you...</p>
+              </div>
+            ) : centers.length > 0 ? (
+              <div className="centers-list">
+                {centers.map(center => (
+                  <div key={center.id} className="center-card">
+                    <div className="center-header">
+                      <span className="center-name">{center.name}</span>
+                      <span className="center-distance">{center.distance} km</span>
+                    </div>
+                    <div className="center-types">{center.types}</div>
+                  </div>
+                ))}
+                <button className="view-map-btn" onClick={() => navigate('/map')}>
+                  View Full Map
+                </button>
+              </div>
+            ) : (
+              <div className="centers-empty">
+                <p>No verified collection centers found within 5km.</p>
+                <button className="view-map-btn" onClick={() => navigate('/map')}>
+                  Search Broader Area on Map
+                </button>
               </div>
             )}
           </div>
