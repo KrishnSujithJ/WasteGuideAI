@@ -41,7 +41,12 @@ const Scanner = () => {
 
     try {
       const response = await axios.post('https://wasteguideai-backend.onrender.com/api/scan', { item: searchQuery });
-      setResult(response.data);
+      if (response.data.error) {
+        setError(response.data.error);
+        setResult(null);
+      } else {
+        setResult(response.data);
+      }
     } catch (err) {
       console.error(err);
       setError('Failed to analyze the item. Please ensure the backend is running.');
