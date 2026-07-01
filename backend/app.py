@@ -35,11 +35,13 @@ if os.getenv("FIREBASE_CREDENTIALS_PATH") and firebase_admin:
 
 # Initialize Groq if API key exists
 groq_client = None
+groq_init_error = None
 if os.getenv("GROQ_API_KEY") and Groq:
     try:
         groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         print("Groq initialized successfully.")
     except Exception as e:
+        groq_init_error = str(e)
         print(f"Groq initialization failed: {e}")
 
 # In-memory fallback database
@@ -47,7 +49,7 @@ local_history = []
 
 def analyze_with_groq(item):
     if not groq_client:
-        return None
+        return {"error": f"GROQ_API_KEY environment variable is not set or client failed to initialize. Init error: {groq_init_error}"}
     
     prompt = f"""
     Analyze the following waste item: "{item}".
@@ -72,7 +74,7 @@ def analyze_with_groq(item):
         return json.loads(chat_completion.choices[0].message.content)
     except Exception as e:
         print(f"Groq API error: {e}")
-        return None
+        return {"error": str(e)}
 
 def mock_analyze(item):
     item_lower = item.lower()
